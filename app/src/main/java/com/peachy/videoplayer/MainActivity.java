@@ -10,6 +10,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -23,6 +24,7 @@ import com.squareup.moshi.Moshi;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -79,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<Media> jsonMediaAdapter = moshi.adapter(Media.class);
         JsonAdapter<Playlist> jsonPlaylistAdapter = moshi.adapter(Playlist.class);
-        String jsonData = JsonUtil.loadJSONFromFile(Environment.getExternalStorageDirectory() + PATH + JSON_FILE_NAME);
+        String jsonData = JsonUtil.loadJSONFromFile(getPath() + PATH + JSON_FILE_NAME);
         JSONObject jsonObj = new JSONObject(jsonData);
         JSONArray playlist_arr = jsonObj.getJSONArray("playlist_arr");
         JSONArray media_info_arr = jsonObj.getJSONArray("media_info");
@@ -103,6 +105,24 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public String getPath() {
+        File file = new File("storage/");
+        File[] listOfStorages = file.listFiles();
+
+        boolean isSDPresent = false;
+
+        if (listOfStorages[1].getName().contains("emmulated")
+                || listOfStorages[0].getName().contains("-")) {
+            isSDPresent = true;
+        }
+
+        if (isSDPresent) {
+            return listOfStorages[0].getAbsolutePath();
+        } else {
+            return Environment.getExternalStorageDirectory().toString();
+        }
+    }
+
     private void startPlayMedia(int indexOfMedia) throws Exception {
         if (indexOfMedia >= playlistKeys.size()) {
             indexOfMedia = 0;
@@ -115,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
         }
         Media media = medias.get(playlist.media_id);
 
-        if(media.type.equals("image")){
+        if (media.type.equals("image")) {
             setUpImageView(media);
         } else if (media.type.equals("video")) {
             setUpVideo(media);
@@ -124,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         this.indexOfMedia = indexOfMedia;
-        handler.postDelayed(runnable , playlist.duration * 1000);
+        handler.postDelayed(runnable, playlist.duration * 1000);
     }
 
     private boolean isInProperTime(Playlist playlist) throws ParseException {
@@ -157,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         videoPlayer.stopPlayback();
         videoPlayer.setVisibility(View.GONE);
 
-        String path = Environment.getExternalStorageDirectory() + PATH + media.file_path;
+        String path = getPath() + PATH + media.file_path;
         Uri uri = Uri.parse(path);
         imageShowIV.setImageURI(uri);
         imageShowIV.setVisibility(View.VISIBLE);
@@ -166,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
     private void setUpVideo(Media media) {
         imageShowIV.setVisibility(View.GONE);
 
-        String path = Environment.getExternalStorageDirectory() + PATH + media.file_path;
+        String path = getPath() + PATH + media.file_path;
         Uri uri = Uri.parse(path);
         videoPlayer.setVideoURI(uri);
         videoPlayer.setVisibility(View.VISIBLE);
@@ -182,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
     Handler handler = new Handler();
     Runnable runnable = new Runnable() {
         @Override
-        public void run()  {
+        public void run() {
             try {
                 startPlayMedia(MainActivity.this.indexOfMedia + 1);
             } catch (Exception e) {
@@ -191,7 +211,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
 
 
     private void showSubmitDialog(String title, String message) {
